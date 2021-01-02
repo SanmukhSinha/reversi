@@ -1,0 +1,26 @@
+{
+  "name": "reversi",
+  "version": "1.0.0",
+  "description": "This is the game Reversi(Othello)",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SanmukhSinha/reversi.git"
+  },
+  "keywords": [
+    "reversi"
+  ],
+  "author": "Sanmukh Sinha",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/SanmukhSinha/reversi/issues"
+  },
+  "homepage": "https://github.com/SanmukhSinha/reversi#readme",
+  "dependencies": {
+    "node-static": "^0.7.11",
+    "socket.io": "^3.0.4"
+  }
+}
