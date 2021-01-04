@@ -32,11 +32,18 @@ var app = http.createServer(
 
 console.log('The server is Running');
 
+
 /**********************************************/
 /*      Setup the websocket server         */
+
+/* A registy of socket ids and player info */
+var players = [];
+
 var io = require('socket.io')(app);
 
 io.on('connection', function(socket){
+
+    log('Client connection by '+socket.id);
 
     function log(){
         var array = ['***Server Log Messages: '];
@@ -47,12 +54,6 @@ io.on('connection', function(socket){
         socket.emit('log',array);
         socket.broadcast.emit('log',array);
     }
-    
-    log('A website connected to the server');
-
-    socket.on('disconnect', function(socket){
-        log('A website disconnected from the server');
-    });
 
     /*join_room command */
     /*payload: 
@@ -65,6 +66,7 @@ io.on('connection', function(socket){
             'result': success,
             'room': room joined,
             'username': username that joined,
+            'socket_id': the socket id of the player,
             'membership': no. of people in the room
         }
         or
@@ -75,7 +77,8 @@ io.on('connection', function(socket){
     */
 
     socket.on('join_room', function(payload){
-        log('server received a command','join_room',payload);
+        log('\'join_room\' command' + JSON.stringify(payload));
+        
         if((typeof payload === undefined )|| !payload){
             var error_message = 'join_room had no payload, aborted';
             log(error_message);
@@ -99,29 +102,60 @@ io.on('connection', function(socket){
             return;
         }
         
-        socket.join(room,function(){
+        /*Store information of new player */
+        players[socket.id] = {};
+        players[socket.id].username = username;
+        players[socket.id].room = room;
+
+        /*User joins the room*/
+        /*socket.join(room,function(){
             console.log("Socket now in rooms", socket.rooms);
-        });
-        
+        });*/
+        socket.join(room);
 
         var roomObject = io.sockets.adapter.rooms.get(room);
-        //console.log(roomObject);
-        if((typeof roomObject === undefined )|| !roomObject){
-            var error_message = 'join_room had no roomObject, aborted';
-            log(error_message);
-            socket.emit('join_room_response',{result: 'fail', message: error_message});
-            return;
-        }
-
+       
+        /*Broadcast join message*/
         var numClients = roomObject.size;
         var success_data = {
                             result: 'success',
                             room: room,
                             username: username,
+                            socket_id: socket.id,
                             membership: numClients
                             };
-        io.sockets.in(room).emit('join_room_response',success_data);
-        log('Room: ' + room + ' was just joined by '+ username);
+        io.in(room).emit('join_room_response',success_data);
+
+        for(const [_, socket_in_room] of io.of("/").in(room).sockets){
+            //console.log(socket_in_room.id);
+            var success_data = {
+                                result: 'success',
+                                room: room,
+                                username: players[socket_in_room.id].username,
+                                socket_id: socket_in_room.id,
+                                membership: numClients
+                                };
+            socket.emit('join_room_response',success_data);
+        }
+
+        log('join_room success');
+    });
+
+
+    socket.on('disconnect', function(){
+        log('Client disconnected '+ JSON.stringify(players[socket.id]));
+
+        if('undefined'!== typeof players[socket.id] && players[socket.id]){
+            var username = players[socket.id].username;
+            var room = players[socket.id].room;
+            var payload ={
+                            username: username,
+                            socket_id: socket.id
+                        };
+            delete players[socket.id];
+            io.in(room).emit('player_disconnected',payload);
+        }
+        //io.in(room).emit('player_disconnected',payload);
     });
 
 
