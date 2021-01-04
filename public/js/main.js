@@ -29,6 +29,15 @@ socket.on('log', function(array){
     console.log.apply(console,array);
 });
 
+socket.on('send_message_response',function(payload){
+    if(payload.result == 'fail'){
+        alert(payload.message);
+        return;
+    }
+    document.getElementById('messages').insertAdjacentHTML('afterbegin', '<p>'+ payload.username +' says: '+payload.message+'</p>');
+
+});
+
 socket.on('join_room_response',function(payload){
     if(payload.result == 'fail'){
         alert(payload.message);
@@ -37,6 +46,16 @@ socket.on('join_room_response',function(payload){
     document.getElementById('messages').insertAdjacentHTML('afterbegin', '<p>New User joined the room: '+ payload.username +'</p>');
 
 });
+
+function send_message(){
+    var payload = {};
+    payload.room = chat_room;
+    payload.username = username;
+    payload.message = document.getElementById('send_message_holder').value;
+
+    console.log('*** Client Log Message: \'send_message\' payload: '+ JSON.stringify(payload));
+    socket.emit('send_message',payload);
+}
 
 document.addEventListener("DOMContentLoaded",function(event){
     var payload = {};
