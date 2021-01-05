@@ -852,7 +852,7 @@ function send_game_update(socket, game_id, message){
         /*Send GameOver*/
         var winner = 'tie game';
         if(black > white){
-            winner = 'black';
+            winner = 'black'; 
         }
         if(white > black){
             winner = 'white';
