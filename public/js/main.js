@@ -33,15 +33,116 @@ socket.on('log', function(array){
     console.log.apply(console,array);
 });
 
+function send_message(){
+    var payload = {};
+    payload.room = chat_room;
+    payload.username = username;
+    payload.message = document.getElementById('send_message_holder').value;
+
+    console.log('*** Client Log Message: \'send_message\' payload: '+ JSON.stringify(payload));
+    socket.emit('send_message',payload);
+}
+
 /*When server sends message response*/
 socket.on('send_message_response',function(payload){
     if(payload.result == 'fail'){
         alert(payload.message);
         return;
     }
-    document.getElementById('messages').insertAdjacentHTML('afterbegin', '<p><b>'+ payload.username +' says:</b> '+payload.message+'</p>');
+    var newHTML = '<p><b>'+ payload.username +' says:</b> '+payload.message+'</p>';
+    var newNode = $(newHTML);
+    newNode.hide();
+    $('#messages').append(newNode);
+    newNode.slideDown(500);
+});
+
+
+/*Send an invite message to server*/
+function invite(who){
+    var payload = {};
+    payload.requested_user = who;
+
+    console.log('***Client Log Message \'invite\' payload: '+JSON.stringify(payload));
+    socket.emit('invite',payload);
+}
+
+/*When server sends invite response*/
+socket.on('invite_response',function(payload){
+    if(payload.result == 'fail'){
+        alert(payload.message);
+        return;
+    }
+    var newNode = makeInvitedButton(payload.socket_id);
+    $('.socket_'+payload.socket_id+' button').replaceWith(newNode);
 
 });
+
+/*Someone invited us*/
+socket.on('invited',function(payload){
+    if(payload.result == 'fail'){
+        alert(payload.message);
+        return;
+    }
+    var newNode = makePlayButton(payload.socket_id);
+    $('.socket_'+payload.socket_id+' button').replaceWith(newNode);
+
+});
+
+
+/*Send an uninvite message to server*/
+function uninvite(who){
+    var payload = {};
+    payload.requested_user = who;
+
+    console.log('***Client Log Message \'uninvite\' payload: '+JSON.stringify(payload));
+    socket.emit('uninvite',payload);
+}
+
+/*When server sends uninvite response*/
+socket.on('uninvite_response',function(payload){
+    if(payload.result == 'fail'){
+        alert(payload.message);
+        return;
+    }
+    var newNode = makeInviteButton(payload.socket_id);
+    $('.socket_'+payload.socket_id+' button').replaceWith(newNode);
+
+});
+
+/*Someone uninvited us*/
+socket.on('uninvited',function(payload){
+    if(payload.result == 'fail'){
+        alert(payload.message);
+        return;
+    }
+    var newNode = makeInviteButton(payload.socket_id);
+    $('.socket_'+payload.socket_id+' button').replaceWith(newNode);
+
+});
+
+
+/*Send a game_start message to server*/
+function game_start(who){
+    var payload = {};
+    payload.requested_user = who;
+
+    console.log('***Client Log Message \'game_start\' payload: '+JSON.stringify(payload));
+    socket.emit('game_start',payload);
+}
+
+/*When engaged to play*/
+socket.on('game_start_response',function(payload){
+    if(payload.result == 'fail'){
+        alert(payload.message);
+        return;
+    }
+    var newNode = makeEngagedButton(payload.socket_id);
+    $('.socket_'+payload.socket_id+' button').replaceWith(newNode);
+
+    /*Jump to a new page*/
+    window.location.href = 'game.html?username='+username+'&game_id='+payload.game_id;
+});
+
 
 /*When server responds that someone joined room*/
 socket.on('join_room_response',function(payload){
@@ -74,7 +175,7 @@ socket.on('join_room_response',function(payload){
         nodeB.append('<h4>'+payload.username+'</h4>');
 
         nodeC.addClass('col-3 text-left');
-        var buttonC = makeInviteButton();
+        var buttonC = makeInviteButton(payload.socket_id);
         nodeC.append(buttonC);
 
         nodeA.hide();
@@ -87,7 +188,8 @@ socket.on('join_room_response',function(payload){
         nodeC.slideDown(1000);
     }
     else{
-        var buttonC = makeInviteButton();
+        uninvite(payload.socket_id);
+        var buttonC = makeInviteButton(payload.socket_id);
         $('.socket_'+payload.socket_id+' button').replaceWith(buttonC);
         dom_elements,slideDown(1000);
     }
@@ -131,20 +233,35 @@ socket.on('player_disconnected',function(payload){
 
 });
 
-
-
-function send_message(){
-    var payload = {};
-    payload.room = chat_room;
-    payload.username = username;
-    payload.message = document.getElementById('send_message_holder').value;
-
-    console.log('*** Client Log Message: \'send_message\' payload: '+ JSON.stringify(payload));
-    socket.emit('send_message',payload);
+function makeInviteButton(socket_id){
+    var newHTML = '<button style=\'font-weight: bold;\' type=\'button\' class=\'btn btn-primary\'>Invite</button>';
+    var newNode = $(newHTML);
+    newNode.click(function(){
+        invite(socket_id);
+    });
+    return newNode;
 }
 
-function makeInviteButton(){
-    var newHTML = '<button type=\'button\' class=\'btn btn-primary\'>Invite</button>';
+function makeInvitedButton(socket_id){
+    var newHTML = '<button style=\'font-weight: bold;\' type=\'button\' class=\'btn btn-outline-primary\'>Invited</button>';
+    var newNode = $(newHTML);
+    newNode.click(function(){
+        uninvite(socket_id);
+    });
+    return newNode;
+}
+
+function makePlayButton(socket_id){
+    var newHTML = '<button style=\'font-weight: bold;\' type=\'button\' class=\'btn btn-warning\'>Play</button>';
+    var newNode = $(newHTML);
+    newNode.click(function(){
+        game_start(socket_id);
+    });
+    return newNode;
+}
+
+function makeEngagedButton(){
+    var newHTML = '<button style=\'font-weight: bold;\' type=\'button\' class=\'btn btn-danger\'>Engaged</button>';
     var newNode = $(newHTML);
     return newNode;
 }
@@ -154,6 +271,126 @@ document.addEventListener("DOMContentLoaded",function(event){
     payload.room = chat_room;
     payload.username = username;
 
-    console.log('*** Client Log Message: \'join room\' payload: '+ JSON.stringify(payload));
+    console.log('*** Client Log Message: \'join_room\' payload: '+ JSON.stringify(payload));
     socket.emit('join_room',payload);
+});
+
+var old_board = [
+                    ['?','?','?','?','?','?','?','?'],
+                    ['?','?','?','?','?','?','?','?'],
+                    ['?','?','?','?','?','?','?','?'],
+                    ['?','?','?','?','?','?','?','?'],
+                    ['?','?','?','?','?','?','?','?'],
+                    ['?','?','?','?','?','?','?','?'],
+                    ['?','?','?','?','?','?','?','?'],
+                    ['?','?','?','?','?','?','?','?']
+                ];
+var my_color = ' ';
+
+socket.on('game_update',function(payload){
+
+    //var my_color = ' ';
+    console.log('*** Client Log Message: \'game_update\' payload: '+ JSON.stringify(payload));
+    /*Check for a good board update*/
+    if(payload.result == 'fail'){
+        console.log(payload.message);
+        window.location.href = 'lobby.html?username='+username;
+        return;
+    }
+
+    /*Check for a good board in payload*/
+    var board = payload.game.board;
+    if(typeof board == 'undefined'|| !board){
+        console.log('Internal error: Bad board from server');
+        return;
+    }
+
+    /*Update my color*/
+    console.log('See: '+ socket.id);
+    if(socket.id == payload.game.player_white.socket){
+        my_color = 'white';
+    }
+    else if(socket.id == payload.game.player_black.socket){
+        my_color = 'black';
+    }
+    else{
+        window.location.href = 'lobby.html?username='+username;
+        return;
+    }
+
+    //$('#my_color').html('<h3 id="my_color">I am '+my_color+'</h3>');
+    $('#my_color').html('I am '+my_color);
+
+    /*Change Board*/
+    var row,col;
+
+    for(row = 0; row<8; row++){
+        for(col = 0; col<8; col++){
+            /*If tile changed*/
+            if(old_board[row][col] != board[row][col]){
+                if(old_board[row][col] == '?' && board[row][col] == ' '){
+                    $('#'+row+'_'+col).html('<img src="assets/images/empty.png"/>');
+                }
+                else if(old_board[row][col] == '?' && board[row][col] == 'w'){
+                    $('#'+row+'_'+col).html('<img src="assets/images/white.png" width="50" height="50"/>');
+                }
+                else if(old_board[row][col] == '?' && board[row][col] == 'b'){
+                    $('#'+row+'_'+col).html('<img src="assets/images/black.png" width="60" height="60"/>');
+                }
+                else if(old_board[row][col] == ' ' && board[row][col] == 'w'){
+                    $('#'+row+'_'+col).html('<img src="assets/images/white.png" width="50" height="50"/>');
+                }
+                else if(old_board[row][col] == ' ' && board[row][col] == 'b'){
+                    $('#'+row+'_'+col).html('<img src="assets/images/black.png" width="60" height="60"/>');
+                }
+                else if(old_board[row][col] == 'w' && board[row][col] == ' '){
+                    $('#'+row+'_'+col).html('<img src="assets/images/empty.png"/>');
+                }
+                else if(old_board[row][col] == 'b' && board[row][col] == ' '){
+                    $('#'+row+'_'+col).html('<img src="assets/images/empty.png"/>');
+                }
+                else if(old_board[row][col] == 'b' && board[row][col] == 'w'){
+                    $('#'+row+'_'+col).html('<img src="assets/images/white.png" width="50" height="50"/>');
+                }
+                else if(old_board[row][col] == 'w' && board[row][col] == 'b'){
+                    $('#'+row+'_'+col).html('<img src="assets/images/black.png" width="60" height="60"/>');
+                }
+                else{
+                    $('#'+row+'_'+col).html('error');
+                }
+
+                /* Setup click functions */
+                $('#'+row+'_'+col).off('click');
+                if(board[row][col] == ' '){
+                    $('#'+row+'_'+col).addClass('hovered_over');
+                    $('#'+row+'_'+col).click(function(r,c){
+                        return function(){
+                            var payload = {};
+                            payload.row = r;
+                            payload.col = c;
+                            payload.color = my_color;
+                            console.log('***Client Log Message:\'play_token\' payload: '+JSON.stringify(payload));
+                            socket.emit('play_token',payload);
+                        };
+                    }(row,col));
+                }
+                else{
+                    $('#'+row+'_'+col).removeClass('hovered_over');
+                }
+            }
+        }
+    }
+    old_board = board;
+});
+
+socket.on('play_token_response',function(payload){
+
+    console.log('*** Client Log Message: \'play_token_response\' payload: '+ JSON.stringify(payload));
+    /*Check for a good play_token_response*/
+    if(payload.result == 'fail'){
+        console.log(payload.message);
+        alert(payload.message);
+        return;
+    }
+
 });

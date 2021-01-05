@@ -1,0 +1,27 @@
+html, body{
+    max-width: 99.9%;
+    background-color: #28af55;
+  }
+
+#game_board{
+    margin: auto;
+    border: solid;
+    border-width: 10px;
+    border-color: rgb(100,100,100);
+}
+
+#game_board td{
+    padding: 5px;
+    border: solid;
+    border-width: 1px;
+    border-color: rgb(50,50,50);
+}
+
+#messages p{
+    margin: 0px;
+}
+
+td.hovered_over:hover{
+    background:rgb(0,255,0);
+    background-size: 100% 100%;
+}
