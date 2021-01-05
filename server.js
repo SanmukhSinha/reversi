@@ -39,8 +39,8 @@ console.log('The server is Running');
 /* A registy of socket ids and player info */
 var players = [];
 
-var io = require('socket.io')(app);
-
+//var io = require('socket.io',)(app);
+var io = require('socket.io')(app,{transports: ['websocket']});
 io.on('connection', function(socket){
 
     log('Client connection by '+socket.id);

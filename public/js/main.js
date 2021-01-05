@@ -26,7 +26,8 @@ if(typeof chat_room == 'undefined' || !chat_room){
 
 
 /*Connect to the socket server*/
-var socket =  io.connect();
+//var socket =  io.connect();
+var socket =  io.connect({transports: ['websocket']});
 
 /*When server sends log*/
 socket.on('log', function(array){
