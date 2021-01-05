@@ -41,6 +41,7 @@ function send_message(){
 
     console.log('*** Client Log Message: \'send_message\' payload: '+ JSON.stringify(payload));
     socket.emit('send_message',payload);
+    $('#send_message_holder').val('');
 }
 
 /*When server sends message response*/
@@ -52,7 +53,7 @@ socket.on('send_message_response',function(payload){
     var newHTML = '<p><b>'+ payload.username +' says:</b> '+payload.message+'</p>';
     var newNode = $(newHTML);
     newNode.hide();
-    $('#messages').append(newNode);
+    $('#messages').prepend(newNode);
     newNode.slideDown(500);
 });
 
@@ -198,7 +199,7 @@ socket.on('join_room_response',function(payload){
     var newHTML = '<p>'+payload.username+' just joined the room</p>';
     var newNode = $(newHTML);
     newNode.hide();
-    $('#messages').append(newNode);
+    $('#messages').prepend(newNode);
     newNode.slideDown(1000);
 
 });
@@ -228,7 +229,7 @@ socket.on('player_disconnected',function(payload){
     var newHTML = '<p>'+payload.username+' has left the room</p>';
     var newNode = $(newHTML);
     newNode.hide();
-    $('#messages').append(newNode);
+    $('#messages').prepend(newNode);
     newNode.slideDown(1000);
 
 });
@@ -266,14 +267,18 @@ function makeEngagedButton(){
     return newNode;
 }
 
-document.addEventListener("DOMContentLoaded",function(event){
+$(function(){
     var payload = {};
     payload.room = chat_room;
     payload.username = username;
 
     console.log('*** Client Log Message: \'join_room\' payload: '+ JSON.stringify(payload));
     socket.emit('join_room',payload);
+
+    $('#quit').append('<a href="lobby.html?username='+username+'" class="btn btn-danger btn-default active" role="button" aria-pressed="true">Quit</a>');
+
 });
+
 
 var old_board = [
                     ['?','?','?','?','?','?','?','?'],
@@ -320,12 +325,21 @@ socket.on('game_update',function(payload){
 
     //$('#my_color').html('<h3 id="my_color">I am '+my_color+'</h3>');
     $('#my_color').html('I am '+my_color);
-
+    $('#my_color').append('<h4>It is '+payload.game.whose_turn+'\'s turn</h4>');
     /*Change Board*/
+    var blacksum = 0;
+    var whitesum = 0;
     var row,col;
 
     for(row = 0; row<8; row++){
         for(col = 0; col<8; col++){
+            if(board[row][col] == 'b'){
+                blacksum++;
+            }
+            if(board[row][col] == 'w'){
+                whitesum++;
+            }
+
             /*If tile changed*/
             if(old_board[row][col] != board[row][col]){
                 if(old_board[row][col] == '?' && board[row][col] == ' '){
@@ -358,10 +372,14 @@ socket.on('game_update',function(payload){
                 else{
                     $('#'+row+'_'+col).html('error');
                 }
+            }
+        
+            /* Setup click functions */
+            $('#'+row+'_'+col).off('click');
+            $('#'+row+'_'+col).removeClass('hovered_over');
 
-                /* Setup click functions */
-                $('#'+row+'_'+col).off('click');
-                if(board[row][col] == ' '){
+            if(payload.game.whose_turn === my_color){
+                if(payload.game.legal_moves[row][col] === my_color.substr(0,1)){
                     $('#'+row+'_'+col).addClass('hovered_over');
                     $('#'+row+'_'+col).click(function(r,c){
                         return function(){
@@ -374,14 +392,15 @@ socket.on('game_update',function(payload){
                         };
                     }(row,col));
                 }
-                else{
-                    $('#'+row+'_'+col).removeClass('hovered_over');
-                }
             }
         }
     }
+    $('#blacksum').html(blacksum);
+    $('#whitesum').html(whitesum);
+
     old_board = board;
 });
+
 
 socket.on('play_token_response',function(payload){
 
@@ -392,5 +411,19 @@ socket.on('play_token_response',function(payload){
         alert(payload.message);
         return;
     }
+});
 
+
+socket.on('game_over',function(payload){
+
+    console.log('*** Client Log Message: \'game_over\' payload: '+ JSON.stringify(payload));
+    /*Check for a good game_over*/
+    if(payload.result == 'fail'){
+        console.log(payload.message); 
+        return;
+    }
+
+    /*Jump to new page*/
+    $('#game_over').html('<h1>Game Over</h1><h2>'+payload.who_won+' won!</h2>');
+    $('#game_over').append('<a href="lobby.html?username='+username+'" class="btn btn-success btn-lg active" role="button" aria-pressed="true">Return to lobby</a>');
 });
