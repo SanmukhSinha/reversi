@@ -349,13 +349,13 @@ socket.on('game_update',function(payload){
                     $('#'+row+'_'+col).html('<img src="assets/images/white.png" width="50" height="50"/>');
                 }
                 else if(old_board[row][col] == '?' && board[row][col] == 'b'){
-                    $('#'+row+'_'+col).html('<img src="assets/images/black.png" width="60" height="60"/>');
+                    $('#'+row+'_'+col).html('<img src="assets/images/black.png" width="50" height="50"/>');
                 }
                 else if(old_board[row][col] == ' ' && board[row][col] == 'w'){
                     $('#'+row+'_'+col).html('<img src="assets/images/white.png" width="50" height="50"/>');
                 }
                 else if(old_board[row][col] == ' ' && board[row][col] == 'b'){
-                    $('#'+row+'_'+col).html('<img src="assets/images/black.png" width="60" height="60"/>');
+                    $('#'+row+'_'+col).html('<img src="assets/images/black.png" width="50" height="50"/>');
                 }
                 else if(old_board[row][col] == 'w' && board[row][col] == ' '){
                     $('#'+row+'_'+col).html('<img src="assets/images/empty.png"/>');
@@ -367,7 +367,7 @@ socket.on('game_update',function(payload){
                     $('#'+row+'_'+col).html('<img src="assets/images/white.png" width="50" height="50"/>');
                 }
                 else if(old_board[row][col] == 'w' && board[row][col] == 'b'){
-                    $('#'+row+'_'+col).html('<img src="assets/images/black.png" width="60" height="60"/>');
+                    $('#'+row+'_'+col).html('<img src="assets/images/black.png" width="50" height="50"/>');
                 }
                 else{
                     $('#'+row+'_'+col).html('error');
